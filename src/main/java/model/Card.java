@@ -5,13 +5,19 @@ public class Card {
     private CardType cardType ;
     private int value;
 
-    int getValue(){
+    public Card(Color color , CardType cardType , int value ){
+        this.color = color;
+        this.cardType= cardType;
+        this.value = value ;
+    }
+
+    public int getValue(){
         return this.value;
     }
-    Color getColor(){
+    public Color getColor(){
         return this.color ;
     }
-    CardType getCardType(){
+    public CardType getCardType(){
         return this.cardType;
     }
 

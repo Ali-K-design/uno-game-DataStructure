@@ -21,6 +21,19 @@ public class TurnManager {
         }
     }
 
+    public void handleReverseCard() {
+        if (players.getSize() == 2) {
+            advanceTurn(2);
+        } else {
+            reverseDirection();
+            advanceTurn(1);
+        }
+    }
+
+    public void skipTurn() {
+        advanceTurn(2);
+    }
+
     public Player getCurrentPlayer() {
         if (current == null) {
             return null;
@@ -53,15 +66,6 @@ public class TurnManager {
 
     public void reverseDirection() {
         isClockwise = !isClockwise;
-    }
-
-    public void handleReverseCard() {
-        if (players.getSize() == 2) {
-            advanceTurn(2);
-        } else {
-            reverseDirection();
-            advanceTurn(1);
-        }
     }
 
     public boolean isClockwise() {
