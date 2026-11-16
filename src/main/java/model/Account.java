@@ -1,5 +1,7 @@
 package model;
 
+import dataStructures.DynamicArray;
+
 public class Account {
     String username ;
     String password ;
@@ -7,6 +9,7 @@ public class Account {
     int totalScore ;
     int gamesPlayed ;
     int wins ;
+    private DynamicArray<Integer> roundScores ;
 
     public String getUsername() {
         return username;
@@ -54,5 +57,14 @@ public class Account {
 
     public void setWins(int wins) {
         this.wins = wins;
+    }
+
+    public void addRoundScore(int score) {
+        roundScores.add(score);
+        totalScore += score;
+    }
+
+    public DynamicArray getRoundScores(){
+        return this.roundScores;
     }
 }
