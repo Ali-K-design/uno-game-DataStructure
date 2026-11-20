@@ -12,6 +12,7 @@ public class CustomStack<T> {
     }
 
     public T pop(){
+        if (top == null) throw new IllegalStateException("Stack is empty");
         T data = top.getData();
         top = top.getNext();
         size--;
@@ -19,6 +20,7 @@ public class CustomStack<T> {
     }
 
     public T peek(){
+        if (top == null) throw new IllegalStateException("Stack is empty");
         return top.getData();
     }
 

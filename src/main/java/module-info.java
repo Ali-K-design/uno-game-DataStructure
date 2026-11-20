@@ -1,8 +1,14 @@
-module com.example.demo1 {
+module com.example.unogame {
     requires javafx.controls;
     requires javafx.fxml;
 
-
-    opens com.example.demo1 to javafx.fxml;
-    exports com.example.demo1;
+    exports com.example.unogame;
+    exports dataStructures;
+    exports model;
+    exports game;
+    exports controller;
+    exports view;
+    exports view.gui;
+    exports view.gui.screens;
+    exports view.gui.demo;
 }

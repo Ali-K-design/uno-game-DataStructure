@@ -19,11 +19,18 @@ public class DynamicArray<T> {
         size++;
     }
 
+    private void checkIndex(int index) {
+        if (index < 0 || index >= size) throw new IndexOutOfBoundsException("Index " + index + ", size " + size);
+    }
+
     public void set(T item , int index){
+        checkIndex(index);
         array[index]=item ;
     }
 
     public void swap(int index1 , int index2){
+        checkIndex(index1);
+        checkIndex(index2);
         T temp = array[index2];
         array[index2] = array[index1];
         array[index1]= temp ;
@@ -40,6 +47,7 @@ public class DynamicArray<T> {
     }
 
     public T get (int index){
+        checkIndex(index);
         return array[index];
     }
 

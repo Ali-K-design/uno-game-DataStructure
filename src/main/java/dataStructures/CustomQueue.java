@@ -19,6 +19,7 @@ public class CustomQueue<T> {
     }
 
     public T dequeue(){
+        if (front == null) throw new IllegalStateException("Queue is empty");
         T data = front.getData();
         front = front.getNext();
         if (front == null) {
@@ -29,7 +30,8 @@ public class CustomQueue<T> {
     }
 
     public T peek(){
-        return rear.getData();
+        if (front == null) throw new IllegalStateException("Queue is empty");
+        return front.getData();
     }
 
     public boolean isEmpty(){
