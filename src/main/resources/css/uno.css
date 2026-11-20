@@ -1,0 +1,221 @@
+/* ===================================================================
+   UNO  |  JavaFX theme  (dark, glass, neon accents)
+   Load once on the Scene:  scene.getStylesheets().add(".../uno.css")
+   =================================================================== */
+
+.root {
+    -uno-bg0: #080b16;
+    -uno-bg1: #121a36;
+    -uno-text: #e9edfb;
+    -uno-muted: #8a94b8;
+    -uno-glass: rgba(255,255,255,0.06);
+    -uno-line: rgba(255,255,255,0.12);
+    -uno-accent: #7c5cff;
+    -uno-accent2: #22d3ee;
+    -uno-red: #ef4444;   -uno-red-d: #b91c1c;
+    -uno-blue: #3b82f6;  -uno-blue-d: #1d4ed8;
+    -uno-green: #22c55e; -uno-green-d: #15803d;
+    -uno-yellow: #facc15; -uno-yellow-d: #ca8a04;
+
+    -fx-font-family: "Inter", "Segoe UI", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-size: 14px;
+    -fx-base: #121a36;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.label { -fx-text-fill: -uno-text; }
+
+/* ---------- screens ---------- */
+.screen {
+    -fx-background-color:
+        radial-gradient(center 15% 10%, radius 55%, rgba(124,92,255,0.30), transparent),
+        radial-gradient(center 90% 95%, radius 55%, rgba(34,211,238,0.18), transparent),
+        linear-gradient(to bottom, -uno-bg1, -uno-bg0);
+}
+.glass {
+    -fx-background-color: -uno-glass;
+    -fx-background-radius: 22;
+    -fx-border-color: -uno-line;
+    -fx-border-radius: 22;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 40, 0.1, 0, 18);
+}
+.brand-logo {
+    -fx-font-size: 84px; -fx-font-weight: 900; -fx-font-style: italic;
+    -fx-text-fill: linear-gradient(to right, #ff5f6d, #ffc371);
+    -fx-effect: dropshadow(gaussian, rgba(255,95,109,0.55), 30, 0.25, 0, 4);
+}
+.h1 { -fx-font-size: 28px; -fx-font-weight: 800; }
+.h2 { -fx-font-size: 18px; -fx-font-weight: 700; }
+.muted { -fx-text-fill: -uno-muted; }
+.field-label { -fx-text-fill: -uno-muted; -fx-font-size: 12px; -fx-font-weight: 700; }
+.form-error { -fx-text-fill: #ff7b7b; -fx-font-size: 13px; }
+
+/* ---------- inputs ---------- */
+.text-field, .password-field {
+    -fx-background-color: rgba(255,255,255,0.06);
+    -fx-text-fill: -uno-text;
+    -fx-prompt-text-fill: rgba(255,255,255,0.35);
+    -fx-background-radius: 12;
+    -fx-border-color: -uno-line; -fx-border-radius: 12;
+    -fx-padding: 12 14;
+}
+.text-field:focused, .password-field:focused {
+    -fx-border-color: -uno-accent;
+    -fx-effect: dropshadow(gaussian, rgba(124,92,255,0.55), 14, 0.2, 0, 0);
+}
+
+/* ---------- buttons ---------- */
+.button {
+    -fx-background-color: rgba(255,255,255,0.09);
+    -fx-background-insets: 0; -fx-background-radius: 12;
+    -fx-text-fill: -uno-text; -fx-font-weight: 700;
+    -fx-padding: 11 20; -fx-cursor: hand;
+}
+.button:hover   { -fx-background-color: rgba(255,255,255,0.16); }
+.button:pressed { -fx-scale-x: 0.97; -fx-scale-y: 0.97; }
+.button:disabled { -fx-opacity: 0.38; }
+
+.btn-primary {
+    -fx-background-color: linear-gradient(to right, -uno-accent, -uno-accent2);
+    -fx-text-fill: white; -fx-font-size: 15px; -fx-padding: 13 26;
+    -fx-effect: dropshadow(gaussian, rgba(124,92,255,0.55), 20, 0.2, 0, 6);
+}
+.btn-primary:hover { -fx-background-color: linear-gradient(to right, #9078ff, #5be4f7); }
+.btn-danger  { -fx-background-color: rgba(239,68,68,0.20); -fx-text-fill: #ff8f8f; }
+.btn-danger:hover { -fx-background-color: rgba(239,68,68,0.38); }
+.btn-draw {
+    -fx-background-color: linear-gradient(to bottom, #fbbf24, #f59e0b);
+    -fx-text-fill: #2a1a00; -fx-font-size: 15px; -fx-padding: 12 28;
+    -fx-effect: dropshadow(gaussian, rgba(251,191,36,0.45), 18, 0.2, 0, 4);
+}
+.btn-draw:hover { -fx-background-color: linear-gradient(to bottom, #fcd34d, #fbbf24); }
+
+.stepper-btn { -fx-padding: 6 14; -fx-font-size: 18px; -fx-background-radius: 10; }
+.stepper-value { -fx-font-size: 24px; -fx-font-weight: 800; -fx-min-width: 40; -fx-alignment: center; }
+
+.toggle-button.seg {
+    -fx-background-color: rgba(255,255,255,0.06); -fx-background-radius: 10;
+    -fx-text-fill: -uno-muted; -fx-font-weight: 700; -fx-padding: 9 18; -fx-cursor: hand;
+}
+.toggle-button.seg:selected {
+    -fx-background-color: linear-gradient(to right, -uno-accent, -uno-accent2);
+    -fx-text-fill: white;
+}
+
+/* ---------- top bar & chips ---------- */
+.topbar { -fx-background-color: rgba(8,11,22,0.55); -fx-border-color: transparent transparent -uno-line transparent; }
+.chip {
+    -fx-background-color: -uno-glass; -fx-background-radius: 999;
+    -fx-border-color: -uno-line; -fx-border-radius: 999;
+    -fx-padding: 6 14; -fx-font-size: 12px; -fx-font-weight: 700;
+}
+.chip-accent { -fx-background-color: rgba(124,92,255,0.25); -fx-border-color: -uno-accent; }
+.chip-turn   { -fx-background-color: rgba(34,197,94,0.22); -fx-border-color: -uno-green; -fx-text-fill: #86efac; }
+.spinner { -fx-fill: transparent; -fx-stroke: -uno-accent2; -fx-stroke-width: 3; -fx-stroke-line-cap: round; }
+
+/* ---------- table ---------- */
+.arena { -fx-background-color: transparent; }
+.felt {
+    -fx-background-color: radial-gradient(center 50% 45%, radius 70%, rgba(52,72,150,0.55), rgba(18,26,54,0.35));
+    -fx-background-radius: 999;
+    -fx-border-color: rgba(255,255,255,0.10); -fx-border-width: 2; -fx-border-radius: 999;
+    -fx-effect: innershadow(gaussian, rgba(0,0,0,0.5), 40, 0.1, 0, 0);
+}
+.felt-ring { -fx-background-radius: 999; -fx-border-radius: 999; -fx-border-width: 3; -fx-border-color: -uno-line; -fx-opacity: 0.9; }
+.felt-ring.red    { -fx-border-color: -uno-red;    -fx-effect: dropshadow(gaussian, rgba(239,68,68,0.75), 42, 0.3, 0, 0); }
+.felt-ring.blue   { -fx-border-color: -uno-blue;   -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.75), 42, 0.3, 0, 0); }
+.felt-ring.green  { -fx-border-color: -uno-green;  -fx-effect: dropshadow(gaussian, rgba(34,197,94,0.75), 42, 0.3, 0, 0); }
+.felt-ring.yellow { -fx-border-color: -uno-yellow; -fx-effect: dropshadow(gaussian, rgba(250,204,21,0.75), 42, 0.3, 0, 0); }
+
+.color-dot { -fx-background-radius: 999; -fx-min-width: 14; -fx-min-height: 14; -fx-pref-width: 14; -fx-pref-height: 14; -fx-max-width: 14; -fx-max-height: 14; }
+.color-dot.red { -fx-background-color: -uno-red; }       .color-dot.blue { -fx-background-color: -uno-blue; }
+.color-dot.green { -fx-background-color: -uno-green; }   .color-dot.yellow { -fx-background-color: -uno-yellow; }
+.color-dot.none { -fx-background-color: -uno-muted; }
+
+.penalty-badge {
+    -fx-background-color: linear-gradient(to right, #ef4444, #f97316); -fx-text-fill: white;
+    -fx-font-weight: 900; -fx-font-size: 15px; -fx-padding: 6 16; -fx-background-radius: 999;
+    -fx-effect: dropshadow(gaussian, rgba(239,68,68,0.7), 20, 0.3, 0, 0);
+}
+.pile-count { -fx-background-color: rgba(0,0,0,0.65); -fx-text-fill: white; -fx-font-weight: 800; -fx-padding: 3 10; -fx-background-radius: 999; }
+
+/* ---------- seats ---------- */
+.seat { -fx-padding: 10 14; -fx-background-color: rgba(8,11,22,0.55); -fx-background-radius: 18; -fx-border-color: -uno-line; -fx-border-radius: 18; }
+.seat.active { -fx-border-color: -uno-green; -fx-effect: dropshadow(gaussian, rgba(34,197,94,0.65), 26, 0.25, 0, 0); }
+.avatar { -fx-background-radius: 999; -fx-min-width: 46; -fx-min-height: 46; -fx-pref-width: 46; -fx-pref-height: 46; -fx-max-width: 46; -fx-max-height: 46; }
+.avatar.human { -fx-background-color: linear-gradient(to bottom right, #7c5cff, #22d3ee); }
+.avatar.bot   { -fx-background-color: linear-gradient(to bottom right, #475569, #1e293b); }
+.avatar-initial { -fx-font-size: 20px; -fx-font-weight: 900; -fx-text-fill: white; }
+.seat-name { -fx-font-weight: 800; }
+.count-chip { -fx-text-fill: -uno-muted; -fx-font-size: 12px; }
+.uno-tag { -fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: 900; -fx-font-style: italic; -fx-padding: 2 10; -fx-background-radius: 6; -fx-effect: dropshadow(gaussian, rgba(239,68,68,0.8), 14, 0.3, 0, 0); }
+
+/* ---------- log / toast / overlays ---------- */
+.log-panel { -fx-background-color: rgba(8,11,22,0.55); -fx-border-color: -uno-line transparent transparent -uno-line; -fx-padding: 16; }
+.log-line { -fx-text-fill: -uno-muted; -fx-font-size: 12px; }
+.log-line-new { -fx-text-fill: -uno-text; -fx-font-size: 12px; -fx-font-weight: 700; }
+.toast {
+    -fx-background-color: rgba(8,11,22,0.88); -fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: 800;
+    -fx-padding: 12 28; -fx-background-radius: 999; -fx-border-color: -uno-accent; -fx-border-radius: 999;
+    -fx-effect: dropshadow(gaussian, rgba(124,92,255,0.6), 26, 0.2, 0, 0);
+}
+.overlay-scrim { -fx-background-color: rgba(5,8,16,0.74); }
+.color-pick { -fx-min-width: 120; -fx-min-height: 120; -fx-background-radius: 26; -fx-font-size: 16px; -fx-font-weight: 900; -fx-text-fill: white; }
+.color-pick.red    { -fx-background-color: linear-gradient(to bottom right, #ff6b6b, -uno-red-d); }
+.color-pick.blue   { -fx-background-color: linear-gradient(to bottom right, #60a5fa, -uno-blue-d); }
+.color-pick.green  { -fx-background-color: linear-gradient(to bottom right, #4ade80, -uno-green-d); }
+.color-pick.yellow { -fx-background-color: linear-gradient(to bottom right, #fde047, -uno-yellow-d); -fx-text-fill: #3b2a00; }
+.color-pick:hover  { -fx-scale-x: 1.08; -fx-scale-y: 1.08; -fx-effect: dropshadow(gaussian, rgba(255,255,255,0.45), 24, 0.2, 0, 0); }
+.table-head { -fx-text-fill: -uno-muted; -fx-font-size: 11px; -fx-font-weight: 800; }
+.victory { -fx-font-size: 34px; -fx-font-weight: 900; -fx-font-style: italic; -fx-text-fill: linear-gradient(to right, #fde047, #fb923c); }
+
+/* ---------- leaderboard ---------- */
+.lb-row { -fx-background-color: -uno-glass; -fx-background-radius: 14; -fx-padding: 14 20; }
+.lb-row.gold   { -fx-background-color: linear-gradient(to right, rgba(250,204,21,0.28), rgba(250,204,21,0.05)); -fx-border-color: rgba(250,204,21,0.6); -fx-border-radius: 14; }
+.lb-row.silver { -fx-background-color: linear-gradient(to right, rgba(203,213,225,0.25), rgba(203,213,225,0.04)); -fx-border-color: rgba(203,213,225,0.5); -fx-border-radius: 14; }
+.lb-row.bronze { -fx-background-color: linear-gradient(to right, rgba(251,146,60,0.25), rgba(251,146,60,0.04)); -fx-border-color: rgba(251,146,60,0.5); -fx-border-radius: 14; }
+.lb-rank { -fx-font-size: 20px; -fx-font-weight: 900; }
+
+/* ===================================================================
+   CARDS   (all sizes are set inline by CardNode; only colours here)
+   =================================================================== */
+.uno-card {
+    -fx-border-color: white;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.55), 16, 0.15, 0, 7);
+}
+.uno-card.red    { -fx-background-color: linear-gradient(to bottom right, #ff6b6b, -uno-red-d); }
+.uno-card.blue   { -fx-background-color: linear-gradient(to bottom right, #60a5fa, -uno-blue-d); }
+.uno-card.green  { -fx-background-color: linear-gradient(to bottom right, #4ade80, -uno-green-d); }
+.uno-card.yellow { -fx-background-color: linear-gradient(to bottom right, #fde047, -uno-yellow-d); }
+.uno-card.wild, .uno-card.back { -fx-background-color: linear-gradient(to bottom right, #2b2b36, #050507); }
+.uno-card.playable { -fx-effect: dropshadow(gaussian, rgba(255,255,255,0.9), 24, 0.3, 0, 0); }
+.uno-card.dim      { -fx-opacity: 0.5; }
+
+.card-oval { -fx-background-color: white; }
+.uno-card.back .card-oval { -fx-background-color: linear-gradient(to bottom, #ff5252, #c62828); }
+.back-logo { -fx-text-fill: #fde047; -fx-font-weight: 900; -fx-font-style: italic; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 4, 0.5, 1, 2); }
+
+.card-symbol { -fx-font-weight: 900; -fx-font-style: italic; }
+.uno-card.red    .card-symbol { -fx-text-fill: -uno-red-d; }
+.uno-card.blue   .card-symbol { -fx-text-fill: -uno-blue-d; }
+.uno-card.green  .card-symbol { -fx-text-fill: -uno-green-d; }
+.uno-card.yellow .card-symbol { -fx-text-fill: #d49a00; }
+.card-symbol.on-wild { -fx-text-fill: white; -fx-effect: dropshadow(gaussian, black, 5, 0.9, 0, 1); }
+
+.card-corner { -fx-text-fill: white; -fx-font-weight: 900; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 3, 0.5, 1, 1); }
+
+.icon-ring { -fx-fill: transparent; }
+.icon-line, .icon-ring { -fx-stroke-line-cap: round; }
+.uno-card.red    .icon-ring, .uno-card.red    .icon-line { -fx-stroke: -uno-red-d; }
+.uno-card.blue   .icon-ring, .uno-card.blue   .icon-line { -fx-stroke: -uno-blue-d; }
+.uno-card.green  .icon-ring, .uno-card.green  .icon-line { -fx-stroke: -uno-green-d; }
+.uno-card.yellow .icon-ring, .uno-card.yellow .icon-line { -fx-stroke: #d49a00; }
+.uno-card.red    .icon-fill { -fx-fill: -uno-red-d; }
+.uno-card.blue   .icon-fill { -fx-fill: -uno-blue-d; }
+.uno-card.green  .icon-fill { -fx-fill: -uno-green-d; }
+.uno-card.yellow .icon-fill { -fx-fill: #d49a00; }
+
+.emblem { -fx-stroke: white; -fx-stroke-width: 1.5; }
+.emblem.red { -fx-fill: -uno-red; }   .emblem.blue { -fx-fill: -uno-blue; }
+.emblem.green { -fx-fill: -uno-green; } .emblem.yellow { -fx-fill: -uno-yellow; }
