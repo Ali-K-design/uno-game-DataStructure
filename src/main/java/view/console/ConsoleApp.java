@@ -8,7 +8,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintStream;
 
-/** Command-line front end: auth menu -> main menu -> game table. Commands are valid only in their own menu. */
 public class ConsoleApp {
     private final AppActions app;
     private final BufferedReader in;
@@ -42,7 +41,6 @@ public class ConsoleApp {
         }
     }
 
-    // ------------------------------------------------------------ auth + menu
     private void handleAuth(String line) {
         String[] t = line.split("\\s+");
         switch (t[0].toLowerCase()) {
@@ -53,7 +51,7 @@ public class ConsoleApp {
             }
             case "login": {
                 String err = app.login(flag(t, "-u"), flag(t, "-p"));
-                if (err == null) { loggedIn = true; out.println("Welcome, " + app.currentDisplayName() + "!  Commands: leaderboard | start_game -p H -b B -mode score|rounds -limit N | logout"); }
+                if (err == null) { loggedIn = true; out.println("Welcome, " + app.currentDisplayName() + "!  Commands: leaderboard | start_game -p H -b B -mode score|rounds -limit N [-variant nomercy] | logout"); }
                 else out.println("Error: " + err);
                 break;
             }
@@ -86,7 +84,7 @@ public class ConsoleApp {
             bots = Integer.parseInt(flag(t, "-b"));
             limit = Integer.parseInt(flag(t, "-limit"));
         } catch (NumberFormatException e) {
-            out.println("Usage: start_game -p <humans> -b <bots> -mode <score|rounds> -limit <N>");
+            out.println("Usage: start_game -p <humans> -b <bots> -mode <score|rounds> -limit <N> [-variant classic|nomercy]");
             return;
         }
         String[] others = new String[Math.max(0, humans - 1)];
@@ -97,22 +95,28 @@ public class ConsoleApp {
             others[i] = name == null ? "" : name.trim();
         }
         try {
-            game = app.startGame(humans, bots, String.valueOf(flag(t, "-mode")), limit, others, view);
+            String variant = flag(t, "-variant");
+            game = app.startGame(humans, bots, String.valueOf(flag(t, "-mode")), limit, others, variant == null ? "classic" : variant, view);
             afterGameCommand();
         } catch (IllegalArgumentException e) {
             out.println("Error: " + e.getMessage());
         }
     }
 
-    // ------------------------------------------------------------ game table
     private void handleGame(String line) throws IOException {
         String[] t = line.split("\\s+");
         switch (t[0].toLowerCase()) {
             case "play": {
                 try {
-                    game.play(Integer.parseInt(t[1]), colorOrNull(flag(t, "-c")));
+                    int target = -1;
+                    String targetText = flag(t, "-t");
+                    if (targetText != null) {
+                        target = view.seatAt(Integer.parseInt(targetText));
+                        if (target < 1) { out.println("  >> -t must be the number of ANOTHER player from the Players line."); break; }
+                    }
+                    game.play(Integer.parseInt(t[1]), colorOrNull(flag(t, "-c")), target);
                 } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
-                    out.println("Usage: play <card_index> [-c RED|YELLOW|GREEN|BLUE]");
+                    out.println("Usage: play <card_index> [-t <player_index>] [-c RED|YELLOW|GREEN|BLUE]");
                 }
                 break;
             }
@@ -128,7 +132,6 @@ public class ConsoleApp {
         afterGameCommand();
     }
 
-    /** After every command: if a round just ended, let the players read the summary, then continue or leave. */
     private void afterGameCommand() throws IOException {
         while (game != null && view.takeSummaryPending()) {
             out.print(game.scoreboardText());
@@ -141,13 +144,11 @@ public class ConsoleApp {
         }
     }
 
-    // ------------------------------------------------------------ parsing helpers
     private static String flag(String[] t, String name) {
         for (int i = 1; i < t.length - 1; i++) if (t[i].equalsIgnoreCase(name)) return t[i + 1];
         return null;
     }
 
-    /** Value of a flag that may contain spaces (everything after it, e.g. a display name). */
     private static String rest(String[] t, String name) {
         for (int i = 1; i < t.length - 1; i++) {
             if (t[i].equalsIgnoreCase(name)) {

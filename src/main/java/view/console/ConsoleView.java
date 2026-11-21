@@ -7,7 +7,6 @@ import view.GameView;
 
 import java.io.PrintStream;
 
-/** Prints the table in the format required by the spec. Used by the CLI. */
 public class ConsoleView implements GameView {
     private static final String BAR = "==================================================================";
     private static final String DASH = "------------------------------------------------------------------";
@@ -15,10 +14,10 @@ public class ConsoleView implements GameView {
     private int printedLogLines;
     private boolean summaryPending;
     private boolean gameOver;
+    private TableSnapshot last;
 
     public ConsoleView(PrintStream out) { this.out = out; }
 
-    /** True once after a round summary was printed; the app then asks how to continue. */
     public boolean takeSummaryPending() {
         boolean was = summaryPending;
         summaryPending = false;
@@ -27,8 +26,16 @@ public class ConsoleView implements GameView {
 
     public boolean isGameOver() { return gameOver; }
 
+    public int seatAt(int displayIndex) {
+        if (last == null) return -1;
+        int n = last.seats().length;
+        if (displayIndex < 0 || displayIndex >= n) return -1;
+        return last.clockwise() ? displayIndex : (displayIndex == 0 ? 0 : n - displayIndex);
+    }
+
     @Override
     public void render(TableSnapshot s) {
+        last = s;
         if (s.log().length < printedLogLines) printedLogLines = 0;     // a new round started
         for (int i = printedLogLines; i < s.log().length; i++) out.println("  * " + s.log()[i]);
         printedLogLines = s.log().length;
@@ -50,13 +57,16 @@ public class ConsoleView implements GameView {
         out.println(BAR);
         out.println(s.roundTitle() + " | Direction: " + (s.clockwise() ? "CLOCKWISE (--->)" : "COUNTER-CLOCKWISE (<---)")
                 + " | " + s.winCondition());
+        if (s.mercyLimit() > 0) out.println("Variant: NO MERCY (" + s.mercyLimit() + " cards = eliminated; 7 swaps hands, 0 rotates them)");
         StringBuilder players = new StringBuilder("Players: ");
         int n = s.seats().length;
         for (int k = 0; k < n; k++) {
-            int idx = s.clockwise() ? k : (k == 0 ? 0 : n - k);       // show them in the order play will travel
+            int idx = s.clockwise() ? k : (k == 0 ? 0 : n - k);
             TableSnapshot.Seat seat = s.seats()[idx];
             String name = idx == 0 ? "*" + seat.name() + " (You)*" : seat.name();
-            players.append("[").append(name).append(": ").append(seat.cards()).append(" cards]");
+            String label = s.mercyLimit() > 0 ? k + ":" + name : name;
+            players.append("[").append(label).append(": ")
+                   .append(seat.eliminated() ? "OUT" : seat.cards() + " cards").append("]");
             if (k < n - 1) players.append(s.clockwise() ? " --> " : " <-- ");
         }
         out.println(players);
@@ -64,6 +74,7 @@ public class ConsoleView implements GameView {
         out.println("Deck Remaining: " + s.deckCount() + " cards | Pending Draw Penalty: " + s.pendingPenalty());
         out.println("Top Card on Table: [" + CardText.of(s.topCard()) + "] | Active Color: " + s.activeColor());
         out.println(DASH);
+        if (s.mercyLimit() > 0) out.println("Your cards: " + s.hand().length + "/" + s.mercyLimit());
         out.println("Your Hand (" + s.seats()[0].name() + "):" + (s.drawnCardPending() ? "   (last card = the one you just drew)" : ""));
         for (int i = 0; i < s.hand().length; i++) {
             Card c = s.hand()[i];

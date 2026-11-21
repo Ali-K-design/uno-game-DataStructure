@@ -30,6 +30,32 @@ public class DoublyCircularLinkedList<T> {
         size++;
     }
 
+    /** Detaches a node by re-linking its two neighbours (and head/tail if needed): O(1). */
+    public void remove(DoublyNode<T> node) {
+        if (node == null || size == 0) return;
+        if (size == 1) {
+            head = null;
+            tail = null;
+            size = 0;
+            return;
+        }
+        node.getPrev().setNext(node.getNext());
+        node.getNext().setPrev(node.getPrev());
+        if (node == head) head = node.getNext();
+        if (node == tail) tail = node.getPrev();
+        size--;
+    }
+
+    /** Linear search for the node holding this exact object, or null. */
+    public DoublyNode<T> findNode(T data) {
+        DoublyNode<T> node = head;
+        for (int i = 0; i < size; i++) {
+            if (node.getData() == data) return node;
+            node = node.getNext();
+        }
+        return null;
+    }
+
     public int getSize(){
         return this.size;
     }

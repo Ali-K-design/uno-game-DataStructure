@@ -19,11 +19,11 @@ public final class MenuScreen extends StackPane {
     private final VBox namesBox = new VBox(8);
     private final TextField[] nameFields = new TextField[10];
     private boolean scoreMode = true;
+    private boolean noMercy;
 
     public MenuScreen(AppActions app, Router router) {
         getStyleClass().add("screen");
 
-        // ---- top bar
         Label avatar = Ui.label(app.currentDisplayName().substring(0, 1).toUpperCase(), "avatar-initial");
         StackPane av = new StackPane(avatar);
         av.getStyleClass().addAll("avatar", "human");
@@ -36,7 +36,6 @@ public final class MenuScreen extends StackPane {
                 Ui.button("Logout", "btn-danger", () -> { app.logout(); router.showAuth(); }));
         top.setAlignment(Pos.CENTER_LEFT);
 
-        // ---- config panel
         ToggleGroup modeGroup = new ToggleGroup();
         ToggleButton scoreBtn = seg("Score target", modeGroup), roundsBtn = seg("Number of rounds", modeGroup);
         scoreBtn.setSelected(true);
@@ -48,6 +47,19 @@ public final class MenuScreen extends StackPane {
         });
         humans.addListener((o, a, b) -> rebuildNames());
 
+        ToggleGroup variantGroup = new ToggleGroup();
+        ToggleButton classicBtn = seg("Classic", variantGroup), mercyBtn = seg("No Mercy", variantGroup);
+        classicBtn.setSelected(true);
+        Label variantHint = Ui.label("", "muted");
+        variantHint.setWrapText(true);
+        variantGroup.selectedToggleProperty().addListener((o, a, b) -> {
+            if (b == null) { a.setSelected(true); return; }
+            noMercy = b == mercyBtn;
+            variantHint.setText(noMercy
+                    ? "25+ cards = eliminated. Penalties stack only upward (+2 < +4 < +6 < +10). Skip Everyone, Discard All, Color Roulette, Wild Draw 6/10. 7 swaps hands, 0 rotates them. Draw until you can play."
+                    : "");
+        });
+
         Label hint = Ui.label("", "form-error");
         Button start = Ui.button("Start game", "btn-primary", () -> { });
         start.setMaxWidth(Double.MAX_VALUE);
@@ -58,7 +70,8 @@ public final class MenuScreen extends StackPane {
             for (int i = 0; i < extra; i++) others[i] = nameFields[i].getText().trim();
             TableScreen table = new TableScreen(router::showMenu);
             try {
-                GameActions ga = app.startGame(humans.get(), bots.get(), scoreMode ? "score" : "rounds", limit.get(), others, table);
+                GameActions ga = app.startGame(humans.get(), bots.get(), scoreMode ? "score" : "rounds", limit.get(), others,
+                        noMercy ? "nomercy" : "classic", table);
                 table.bind(ga);
                 router.show(table);
             } catch (IllegalArgumentException ex) {
@@ -73,12 +86,14 @@ public final class MenuScreen extends StackPane {
                 field("HUMAN PLAYERS", stepper(humans, 1, 10)),
                 field("BOTS", stepper(bots, 0, 9)),
                 namesBox,
+                field("VARIANT", new HBox(8, classicBtn, mercyBtn)),
+                variantHint,
                 field("GAME ENDS BY", new HBox(8, scoreBtn, roundsBtn)),
                 field("LIMIT", limitBox),
                 hint, start);
         panel.getStyleClass().add("glass");
         panel.setPadding(new Insets(32));
-        panel.setPrefWidth(460); panel.setMaxWidth(460); panel.setMaxHeight(Region.USE_PREF_SIZE);
+        panel.setPrefWidth(480); panel.setMaxWidth(480); panel.setMaxHeight(Region.USE_PREF_SIZE);
 
         HBox center = new HBox(80, panel, Ui.heroCards());
         center.setAlignment(Pos.CENTER);

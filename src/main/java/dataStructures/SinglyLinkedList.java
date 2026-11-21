@@ -1,6 +1,7 @@
 package dataStructures;
 
 import java.util.Comparator;
+import java.util.function.Predicate;
 
 public class SinglyLinkedList<T> {
 
@@ -106,6 +107,52 @@ public class SinglyLinkedList<T> {
             current.setNext(right);
         }
         return temp.getNext();
+    }
+
+    public SinglyLinkedList<T> removeIf(Predicate<T> condition) {
+        SinglyLinkedList<T> removed = new SinglyLinkedList<>();
+        Node<T> previous = null;
+        Node<T> current = head;
+        while (current != null) {
+            Node<T> next = current.getNext();
+            if (condition.test(current.getData())) {
+                if (previous == null) {
+                    head = next;
+                } else {
+                    previous.setNext(next);
+                }
+                if (current == tail) {
+                    tail = previous;
+                }
+                size--;
+                current.setNext(null);
+                removed.appendNode(current);
+            } else {
+                previous = current;
+            }
+            current = next;
+        }
+        return removed;
+    }
+
+    private void appendNode(Node<T> node) {
+        if (head == null) {
+            head = node;
+        } else {
+            tail.setNext(node);
+        }
+        tail = node;
+        size++;
+    }
+
+    public void clear() {
+        head = null;
+        tail = null;
+        size = 0;
+    }
+
+    public Node<T> getTail() {
+        return this.tail;
     }
 
     public Node<T> getHead(){

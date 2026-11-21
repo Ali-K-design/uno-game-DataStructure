@@ -3,7 +3,6 @@ package game;
 import dataStructures.DynamicArray;
 import model.Player;
 
-/** A whole game: consecutive rounds until the win condition (score target or number of rounds) is met. */
 public class Game {
     public enum Mode { SCORE, ROUNDS }
 
@@ -11,6 +10,7 @@ public class Game {
     private final ScoreManager scoreManager;
     private final Mode mode;
     private final int limit;
+    private final RuleSet rules;
     private Round currentRound;
     private int roundNumber;
     private int roundsPlayed;
@@ -18,6 +18,11 @@ public class Game {
     private boolean finalized;
 
     public Game(DynamicArray<Player> players, ScoreManager scoreManager, Mode mode, int limit) {
+        this(players, scoreManager, mode, limit, new ClassicRules());
+    }
+
+    public Game(DynamicArray<Player> players, ScoreManager scoreManager, Mode mode, int limit, RuleSet rules) {
+        this.rules = rules;
         this.players = players;
         this.scoreManager = scoreManager;
         this.mode = mode;
@@ -27,16 +32,15 @@ public class Game {
     public void startRound() {
         roundNumber++;
         roundRecorded = false;
-        currentRound = new Round();
+        currentRound = new Round(rules);
         currentRound.start(players);
     }
 
-    /** Scores the finished round (once). Returns the points the winner earned, or 0 if the round is not over. */
     public int finishRound() {
         if (currentRound == null || !currentRound.isFinished() || roundRecorded) return 0;
         roundRecorded = true;
         roundsPlayed++;
-        return scoreManager.recordRound(players, currentRound.getWinner());
+        return scoreManager.recordRound(players, currentRound.getWinner(), currentRound.getEliminationBonus());
     }
 
     public boolean isGameFinished() {
@@ -47,7 +51,6 @@ public class Game {
         return false;
     }
 
-    /** Highest running total (first player wins ties). */
     public Player getChampion() {
         Player best = null;
         for (int i = 0; i < players.getSize(); i++) {
@@ -57,7 +60,6 @@ public class Game {
         return best;
     }
 
-    /** Writes the game result to every account (once) and refreshes the leaderboard. */
     public void finalizeGame() {
         if (finalized) return;
         finalized = true;
@@ -73,6 +75,7 @@ public class Game {
     public DynamicArray<Player> getPlayers() { return players; }
     public ScoreManager getScoreManager() { return scoreManager; }
     public Mode getMode() { return mode; }
+    public RuleSet getRules() { return rules; }
     public int getLimit() { return limit; }
     public int getRoundNumber() { return roundNumber; }
     public int getRoundsPlayed() { return roundsPlayed; }

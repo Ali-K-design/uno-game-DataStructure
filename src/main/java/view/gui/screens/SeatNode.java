@@ -12,13 +12,15 @@ import javafx.util.Duration;
 import view.gui.CardNode;
 import view.gui.Ui;
 
-/** One opponent: avatar, name, mini card fan, count and a UNO! tag. */
 final class SeatNode extends VBox {
-    SeatNode(TableSnapshot.Seat seat, boolean active) {
+    SeatNode(TableSnapshot.Seat seat, boolean active, int mercyLimit) {
         super(6);
         setAlignment(Pos.CENTER);
         getStyleClass().add("seat");
         if (active) getStyleClass().add("active");
+        boolean danger = mercyLimit > 0 && !seat.eliminated() && seat.cards() >= mercyLimit - 5;
+        if (seat.eliminated()) getStyleClass().add("eliminated");
+        else if (danger) getStyleClass().add("danger");
 
         String initial = seat.name().isEmpty() ? "?" : seat.name().substring(0, 1).toUpperCase();
         StackPane avatar = new StackPane(Ui.label(initial, "avatar-initial"));
@@ -38,6 +40,8 @@ final class SeatNode extends VBox {
 
         String cards = seat.cards() + (seat.cards() == 1 ? " card" : " cards");
         getChildren().addAll(avatar, Ui.label(seat.name(), "seat-name"), minis, Ui.label(cards + "  \u00B7  " + seat.score() + " pts", "count-chip"));
-        if (seat.cards() == 1) getChildren().add(Ui.label("UNO!", "uno-tag"));
+        if (seat.eliminated()) getChildren().add(Ui.label("OUT", "out-tag"));
+        else if (danger) getChildren().add(Ui.label(seat.cards() + "/" + mercyLimit, "danger-tag"));
+        else if (seat.cards() == 1) getChildren().add(Ui.label("UNO!", "uno-tag"));
     }
 }

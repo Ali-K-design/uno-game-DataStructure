@@ -12,7 +12,6 @@ import view.GameView;
 import java.util.ArrayList;
 import java.util.Random;
 
-/** THROWAWAY simulation of a round (simplified rules) just to exercise every UI state. */
 final class DemoGame implements GameActions {
     private static final Color[] COLORS = {Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW};
     private final GameView view;
@@ -68,12 +67,12 @@ final class DemoGame implements GameActions {
 
     private TableSnapshot snapshot() {
         TableSnapshot.Seat[] seats = new TableSnapshot.Seat[n];
-        for (int i = 0; i < n; i++) seats[i] = new TableSnapshot.Seat(names[i], counts[i], 0, bots[i]);
+        for (int i = 0; i < n; i++) seats[i] = new TableSnapshot.Seat(names[i], counts[i], 0, bots[i], false);
         Card[] h = hand.toArray(new Card[0]);
         boolean[] ok = new boolean[h.length];
         for (int i = 0; i < h.length; i++) ok[i] = valid(h[i]) && (!drawnPending || i == h.length - 1);
         return new TableSnapshot("ROUND #" + round, winText, clockwise, seats, turn, 60, top, active, pending,
-                h, ok, drawnPending, log.toArray(new String[0]), summary);
+                h, ok, drawnPending, log.toArray(new String[0]), summary, "classic", 0);
     }
 
     private void advance(int steps) {
@@ -117,7 +116,6 @@ final class DemoGame implements GameActions {
         view.render(snapshot());
     }
 
-    // ---- GameActions
     @Override public void play(int i, Color chosen) {
         if (turn != 0 || i < 0 || i >= hand.size()) return;
         Card c = hand.get(i);
@@ -143,6 +141,7 @@ final class DemoGame implements GameActions {
     @Override public void playDrawn(Color chosen) { play(hand.size() - 1, chosen); }
     @Override public void pass() { drawnPending = false; advance(1); }
     @Override public void nextRound() { round++; resetRound(); }
+    @Override public void play(int i, Color chosen, int targetSeat) { play(i, chosen); }
     @Override public void quit() { }
     @Override public void drawMachine() { if (turn == 0 && pending > 0) { int k = rnd.nextInt(pending + 1); for (int i = 0; i < k; i++) hand.add(randomCard()); counts[0] += k; pending = 0; say("Lucky draw: " + k); advance(1); } }
     @Override public String scoreboardText() { return "(demo) no history"; }

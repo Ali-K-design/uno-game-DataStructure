@@ -6,7 +6,6 @@ import javafx.application.Application;
 import javafx.stage.Stage;
 import view.gui.demo.DemoBackend;
 
-/** Run normally for the real game; pass --demo for the fake backend (UI preview only). */
 public class UnoApp extends Application {
     @Override
     public void start(Stage stage) {

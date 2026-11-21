@@ -11,20 +11,16 @@ import model.Color;
 import model.Player;
 import view.GameView;
 
-/**
- * Runs one game for a View. Humans act through GameActions; bots are driven here
- * via Player.chooseAction. After every state change the View gets a fresh TableSnapshot.
- */
 public class GameSession implements GameActions {
     private final Game game;
     private final GameView view;
     private final Scheduler scheduler;
     private final long botDelayMillis;
     private DynamicArray<String> log = new DynamicArray<>();
-    private Player viewer;                       // whose hand the View shows (the human whose turn it is)
+    private Player viewer;
     private TableSnapshot.RoundSummary summary;
     private boolean closed;
-    private int epoch;                           // invalidates bot tasks scheduled before a quit / new round
+    private int epoch;
 
     public GameSession(Game game, GameView view, Scheduler scheduler, long botDelayMillis) {
         this.game = game;
@@ -39,18 +35,24 @@ public class GameSession implements GameActions {
 
     private Round round() { return game.getCurrentRound(); }
 
-    /** For tests in the same package. */
     Game getGame() { return game; }
 
-    // ================================================================== GameActions
     @Override
     public void play(int cardIndex, Color chosenColor) {
+        play(cardIndex, chosenColor, -1);
+    }
+
+    @Override
+    public void play(int cardIndex, Color chosenColor, int targetSeat) {
         if (!isViewersTurn()) return;
         if (cardIndex < 0 || cardIndex >= viewer.getHand().getSize()) {
             view.toast("There is no card at index " + cardIndex + ".");
             return;
         }
-        playCard(viewer, viewer.getHand().get(cardIndex), chosenColor);
+        Player target = null;
+        int n = game.getPlayers().getSize();
+        if (targetSeat >= 0 && targetSeat < n) target = game.getPlayers().get((indexOf(viewer) + targetSeat) % n);
+        playCard(viewer, viewer.getHand().get(cardIndex), chosenColor, target);
     }
 
     @Override
@@ -61,7 +63,7 @@ public class GameSession implements GameActions {
             view.toast("You have no drawn card to play.");
             return;
         }
-        playCard(viewer, drawn, chosenColor);
+        playCard(viewer, drawn, chosenColor, null);
     }
 
     @Override
@@ -136,10 +138,14 @@ public class GameSession implements GameActions {
         Round r = round();
         try {
             switch (t[0].toLowerCase()) {
-                case "cheat_give":
-                    r.cheatGive(viewer, parseCheatCard(t));
-                    say("[cheat] card added to " + viewer.getName() + "'s hand.");
+                case "cheat_give": {
+                    Card card = parseCheatCard(t);
+                    int copies = parseCopies(t);
+                    for (int i = 0; i < copies; i++) r.cheatGive(viewer, new Card(card.getColor(), card.getCardType(), card.getValue()));
+                    say("[cheat] " + copies + " card(s) added to " + viewer.getName() + "'s hand.");
+                    r.checkMercyAfterCheat();
                     break;
+                }
                 case "cheat_top":
                     r.cheatTop(parseCheatCard(t));
                     say("[cheat] top card replaced.");
@@ -161,7 +167,11 @@ public class GameSession implements GameActions {
             view.toast(e.getMessage());
             return;
         }
-        publish();                       // cheats never advance the turn
+        if (round().isFinished()) {
+            endRound();
+            return;
+        }
+        publish();
     }
 
     @Override
@@ -181,7 +191,6 @@ public class GameSession implements GameActions {
         return sb.toString();
     }
 
-    // ================================================================== turn flow
     private boolean isViewersTurn() {
         if (closed || summary != null || round().isFinished()) return false;
         if (round().getCurrentPlayer() != viewer) {
@@ -191,17 +200,17 @@ public class GameSession implements GameActions {
         return true;
     }
 
-    private void playCard(Player player, Card card, Color chosenColor) {
-        String error = round().tryPlay(player, card, chosenColor);
+    private void playCard(Player player, Card card, Color chosenColor, Player target) {
+        String error = round().tryPlay(player, card, chosenColor, target);
         if (error != null) {
-            view.toast(error);                 // invalid move: no turn consumed
+            view.toast(error);
             return;
         }
         afterPlay(player, card, chosenColor);
     }
 
     private void afterPlay(Player player, Card card, Color chosenColor) {
-        boolean wild = card.getCardType() == CardType.WILD || card.getCardType() == CardType.WILD_DRAW_FOUR;
+        boolean wild = card.getCardType().isWildFamily();
         say(player.getName() + " played " + CardText.of(card) + (wild ? " and chose " + chosenColor : "") + ".");
         if (round().isFinished()) {
             endRound();
@@ -213,14 +222,20 @@ public class GameSession implements GameActions {
             case SKIP: message = "Skip!"; break;
             case REVERSE: message = round().isClockwise() ? "Direction: clockwise" : "Reverse!"; break;
             case DRAW_TWO: message = "+2 penalty for " + next; break;
-            case WILD_DRAW_FOUR: message = "+4 penalty for " + next + " (color " + chosenColor + ")"; break;
+            case WILD_DRAW_FOUR:
+            case WILD_DRAW_SIX:
+            case WILD_DRAW_TEN: message = "+" + round().getPendingPenalty() + " penalty for " + next + " (color " + chosenColor + ")"; break;
             case WILD: message = "New color: " + chosenColor; break;
+            case SKIP_EVERYONE: message = "Skip Everyone! " + player.getName() + " plays again."; break;
+            case DISCARD_ALL: message = "Discard All!"; break;
+            case COLOR_ROULETTE: message = "Color Roulette: " + chosenColor; break;
             default: break;
         }
         publish(message);
     }
 
     private void endRound() {
+        flushEvents();
         Round r = round();
         int gained = game.finishRound();
         DynamicArray<Player> players = game.getPlayers();
@@ -232,7 +247,7 @@ public class GameSession implements GameActions {
             Player p = players.get(i);
             names[i] = p.getName();
             boolean won = p == r.getWinner();
-            leftovers[i] = won ? "-" : handText(p);
+            leftovers[i] = won ? "-" : (p.isEliminated() ? "ELIMINATED" : handText(p));
             points[i] = won ? gained : 0;
             if (!won) points[i] = game.getScoreManager().calculateHandPoints(p.getHand());
         }
@@ -256,11 +271,16 @@ public class GameSession implements GameActions {
         return sb.length() == 0 ? "-" : sb.toString();
     }
 
-    // ================================================================== bots
     private void publish() { publish(null); }
 
-    /** Renders the table, then shows the optional announcement, then lets the next bot move. */
     private void publish(String announcement) {
+        String lastEvent = flushEvents();
+        if (announcement == null) announcement = lastEvent;
+        if (round().isFinished() && summary == null) {
+            endRound();
+            if (announcement != null) view.toast(announcement);
+            return;
+        }
         Player current = round().getCurrentPlayer();
         if (!current.isBot()) viewer = current;
         view.render(snapshot());
@@ -279,7 +299,7 @@ public class GameSession implements GameActions {
         if (r.isFinished() || !bot.isBot()) return;
         Action action = bot.chooseAction(r.stateFor(bot));
         if (action.getType() == Action.Type.PLAY) {
-            String error = r.tryPlay(bot, action.getCard(), action.getColor());
+            String error = r.tryPlay(bot, action.getCard(), action.getColor(), action.getTarget());
             if (error == null) {
                 afterPlay(bot, action.getCard(), action.getColor());
                 return;
@@ -295,7 +315,8 @@ public class GameSession implements GameActions {
         say(bot.getName() + " drew a card.");
         if (drawn != null && r.getDrawnCard() != null) {
             Action second = bot.chooseAction(r.stateFor(bot));
-            if (r.tryPlay(bot, second.getCard(), second.getColor()) == null) {
+            if (second.getType() == Action.Type.PLAY
+                    && r.tryPlay(bot, second.getCard(), second.getColor(), second.getTarget()) == null) {
                 afterPlay(bot, second.getCard(), second.getColor());
                 return;
             }
@@ -304,7 +325,6 @@ public class GameSession implements GameActions {
         publish();
     }
 
-    // ================================================================== snapshot
     private TableSnapshot snapshot() {
         Round r = round();
         DynamicArray<Player> players = game.getPlayers();
@@ -313,7 +333,7 @@ public class GameSession implements GameActions {
         TableSnapshot.Seat[] seats = new TableSnapshot.Seat[n];
         for (int k = 0; k < n; k++) {
             Player p = players.get((viewerIndex + k) % n);
-            seats[k] = new TableSnapshot.Seat(p.getName(), p.getHand().getSize(), p.getCurrentGameScore(), p.isBot());
+            seats[k] = new TableSnapshot.Seat(p.getName(), p.getHand().getSize(), p.getCurrentGameScore(), p.isBot(), p.isEliminated());
         }
         int currentSeat = (indexOf(r.getCurrentPlayer()) - viewerIndex + n) % n;
 
@@ -334,7 +354,8 @@ public class GameSession implements GameActions {
         boolean drawnPending = r.getDrawnCard() != null && r.getCurrentPlayer() == viewer;
         return new TableSnapshot("ROUND #" + game.getRoundNumber(), win, r.isClockwise(), seats, currentSeat,
                 r.getDeckSize(), r.getTopCard(), r.getActiveColor(), r.getPendingPenalty(),
-                hand, playable, drawnPending, logLines, summary);
+                hand, playable, drawnPending, logLines, summary,
+                r.getRules().getName(), r.getRules().eliminationLimit());
     }
 
     private int indexOf(Player player) {
@@ -346,9 +367,26 @@ public class GameSession implements GameActions {
     }
 
     private void say(String line) { log.add(line); }
+    private String flushEvents() {
+        String[] events = round().popEvents();
+        for (int i = 0; i < events.length; i++) say(events[i]);
+        return events.length == 0 ? null : events[events.length - 1];
+    }
 
-    // ================================================================== cheat parsing
-    /** Parses "-t TYPE -c COLOR [-v 0-9]" into a Card, throwing IllegalArgumentException with a clear message. */
+    private int parseCopies(String[] tokens) {
+        for (int i = 1; i < tokens.length - 1; i++) {
+            if (tokens[i].equals("-n")) {
+                try {
+                    int n = Integer.parseInt(tokens[i + 1]);
+                    if (n >= 1 && n <= 60) return n;
+                } catch (NumberFormatException e) {
+                }
+                throw new IllegalArgumentException("-n must be a number between 1 and 60.");
+            }
+        }
+        return 1;
+    }
+
     private Card parseCheatCard(String[] tokens) {
         String type = null, color = null, value = null;
         for (int i = 1; i < tokens.length - 1; i++) {
@@ -365,7 +403,7 @@ public class GameSession implements GameActions {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Unknown card type or color.");
         }
-        boolean wild = cardType == CardType.WILD || cardType == CardType.WILD_DRAW_FOUR;
+        boolean wild = cardType.isWildFamily();
         if (wild && cardColor != Color.NONE) throw new IllegalArgumentException("Wild cards must use -c NONE.");
         if (!wild && cardColor == Color.NONE) throw new IllegalArgumentException("This card needs a real color.");
         int number = 0;

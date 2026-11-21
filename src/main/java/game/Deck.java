@@ -2,6 +2,7 @@ package game;
 
 import dataStructures.CustomQueue;
 import dataStructures.DynamicArray;
+import dataStructures.SinglyLinkedList;
 import model.Card;
 import model.CardType;
 import model.Color;
@@ -17,26 +18,11 @@ public class Deck {
 
     public Deck(Random random) { this.random = random; }
 
-    /** Builds the standard 108-card deck, shuffles it (Fisher-Yates) and loads it into the queue. */
     public void createDeck() {
-        DynamicArray<Card> cards = new DynamicArray<>();
-        Color[] colors = {Color.BLUE, Color.GREEN, Color.RED, Color.YELLOW};
-        for (Color color : colors) {
-            cards.add(new Card(color, CardType.NUMBER, 0));
-            for (int value = 1; value <= 9; value++) {
-                cards.add(new Card(color, CardType.NUMBER, value));
-                cards.add(new Card(color, CardType.NUMBER, value));
-            }
-            for (int i = 0; i < 2; i++) {
-                cards.add(new Card(color, CardType.SKIP, 0));
-                cards.add(new Card(color, CardType.REVERSE, 0));
-                cards.add(new Card(color, CardType.DRAW_TWO, 0));
-            }
-        }
-        for (int i = 0; i < 4; i++) {
-            cards.add(new Card(Color.NONE, CardType.WILD, 0));
-            cards.add(new Card(Color.NONE, CardType.WILD_DRAW_FOUR, 0));
-        }
+        createDeck(new ClassicRules().buildCards());
+    }
+
+    public void createDeck(DynamicArray<Card> cards) {
         shuffle(cards);
         enqueueAll(cards);
     }
@@ -54,7 +40,6 @@ public class Deck {
         }
     }
 
-    /** Draws one card, rebuilding the deck from the discard pile first if it ran out. Null = nothing left at all. */
     public Card drawCard(DiscardPile discardPile) {
         if (drawQueue.isEmpty()) {
             refillDeck(discardPile);
@@ -76,7 +61,6 @@ public class Deck {
         }
     }
 
-    /** Spec 3.4: keep the table card, reset Wild colours, shuffle the rest back into the queue. */
     private boolean refillDeck(DiscardPile discardPile) {
         if (discardPile.size() <= 1) {
             return false;
@@ -96,7 +80,6 @@ public class Deck {
         return true;
     }
 
-    /** Returns a card to the deck and reshuffles everything (used when the first table card is a +4). */
     public void putBackAndShuffle(Card card) {
         DynamicArray<Card> cards = new DynamicArray<>();
         while (!drawQueue.isEmpty()) {
@@ -107,7 +90,10 @@ public class Deck {
         enqueueAll(cards);
     }
 
-    /** Cheat support: drop cards until only one is left. */
+    public void appendToEnd(SinglyLinkedList<Card> cards) {
+        drawQueue.appendList(cards);
+    }
+
     public void reduceToOne() {
         while (drawQueue.getSize() > 1) {
             drawQueue.dequeue();

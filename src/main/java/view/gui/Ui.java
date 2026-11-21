@@ -11,7 +11,6 @@ import model.Card;
 import model.CardType;
 import model.Color;
 
-/** Tiny helpers so the screens stay readable. */
 public final class Ui {
     private Ui() { }
 
@@ -36,7 +35,6 @@ public final class Ui {
         t.play();
     }
 
-    /** Three floating cards used as decoration on the auth + menu screens. */
     public static StackPane heroCards() {
         CardNode a = CardNode.of(new Card(Color.RED, CardType.NUMBER, 7), 170);
         CardNode b = CardNode.of(new Card(Color.NONE, CardType.WILD_DRAW_FOUR, 0), 170);

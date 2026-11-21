@@ -9,7 +9,6 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import view.gui.screens.*;
 
-/** Owns the Scene and swaps screens with a fade. */
 public final class Router {
     private final StackPane host = new StackPane();
     private final AppActions app;

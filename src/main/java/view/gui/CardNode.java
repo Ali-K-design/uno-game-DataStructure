@@ -8,12 +8,12 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.shape.*;
 import javafx.util.Duration;
 import model.Card;
 import model.CardType;
 
-/** A UNO card drawn entirely with nodes + CSS (no images needed). */
 public final class CardNode extends StackPane {
     public static final double RATIO = 1.5;
     private final Card card;
@@ -44,7 +44,7 @@ public final class CardNode extends StackPane {
             getChildren().add(logo);
             return;
         }
-        boolean wild = card.getCardType() == CardType.WILD || card.getCardType() == CardType.WILD_DRAW_FOUR;
+        boolean wild = card.getCardType().isWildFamily();
         getStyleClass().add(wild ? "wild" : card.getColor().name().toLowerCase());
         getChildren().add(buildCenter(card, w));
 
@@ -60,7 +60,6 @@ public final class CardNode extends StackPane {
     public static CardNode back(double width) { return new CardNode(null, width); }
     public Card getCard() { return card; }
 
-    // ---------- pieces ----------
     private static Label cornerLabel(String text, double w) {
         Label l = new Label(text);
         l.getStyleClass().add("card-corner");
@@ -75,6 +74,11 @@ public final class CardNode extends StackPane {
             case REVERSE: return "\u21C4";
             case DRAW_TWO: return "+2";
             case WILD: return "W";
+            case SKIP_EVERYONE: return "\u2298\u2298";
+            case DISCARD_ALL: return "DA";
+            case WILD_DRAW_SIX: return "+6";
+            case WILD_DRAW_TEN: return "+10";
+            case COLOR_ROULETTE: return "CR";
             default: return "+4";
         }
     }
@@ -86,11 +90,27 @@ public final class CardNode extends StackPane {
             case SKIP: return skipIcon(w);
             case REVERSE: return reverseIcon(w);
             case WILD: return wildEmblem(w);
-            default:
-                Label four = symbol("+4", w * 0.30);
-                four.getStyleClass().add("on-wild");
-                return new StackPane(wildEmblem(w), four);
+            case SKIP_EVERYONE: {
+                VBox box = new VBox(2, skipIcon(w), symbol("ALL", w * 0.15));
+                box.setAlignment(Pos.CENTER);
+                return box;
+            }
+            case DISCARD_ALL: {
+                VBox box = new VBox(0, symbol("ALL", w * 0.30), symbol("DISCARD", w * 0.11));
+                box.setAlignment(Pos.CENTER);
+                return box;
+            }
+            case WILD_DRAW_SIX: return wildWithText("+6", w * 0.30, w);
+            case WILD_DRAW_TEN: return wildWithText("+10", w * 0.26, w);
+            case COLOR_ROULETTE: return wildWithText("?", w * 0.34, w);
+            default: return wildWithText("+4", w * 0.30, w);
         }
+    }
+
+    private static Node wildWithText(String text, double fontSize, double w) {
+        Label l = symbol(text, fontSize);
+        l.getStyleClass().add("on-wild");
+        return new StackPane(wildEmblem(w), l);
     }
 
     private static Label symbol(String text, double size) {
@@ -141,7 +161,6 @@ public final class CardNode extends StackPane {
         return g;
     }
 
-    // ---------- state & animation ----------
     public void setPlayable(boolean playable) {
         getStyleClass().removeAll("playable", "dim");
         getStyleClass().add(playable ? "playable" : "dim");

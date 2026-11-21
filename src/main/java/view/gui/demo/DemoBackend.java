@@ -7,7 +7,6 @@ import view.GameView;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** THROWAWAY: in-memory fake so the GUI runs before your real controller exists. Delete when wired. */
 public final class DemoBackend implements AppActions {
     private final Map<String, String[]> users = new LinkedHashMap<>();   // username -> {password, displayName}
     private String current;
@@ -47,7 +46,7 @@ public final class DemoBackend implements AppActions {
         return rows;
     }
 
-    @Override public GameActions startGame(int humans, int bots, String mode, int limit, String[] others, GameView view) {
+    @Override public GameActions startGame(int humans, int bots, String mode, int limit, String[] others, String variant, GameView view) {
         if (humans + bots < 2 || humans + bots > 10) throw new IllegalArgumentException("Total players must be between 2 and 10.");
         String win = mode.equals("score") ? "Win Condition: " + limit + " Pts" : "Win Condition: " + limit + " rounds";
         return new DemoGame(currentDisplayName(), humans + bots, humans, win, view);

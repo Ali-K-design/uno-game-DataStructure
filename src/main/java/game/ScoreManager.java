@@ -13,29 +13,41 @@ public class ScoreManager {
         this.leaderboard = leaderboard;
     }
 
-    /** Total value of a hand, computed recursively over the linked list. */
     public int calculateHandPoints(SinglyLinkedList<Card> hand) {
-        return calcHandScore(hand.getHead());
+        return handPoints(hand);
     }
 
-    private int calcHandScore(Node<Card> node) {
+    public static int handPoints(SinglyLinkedList<Card> hand) {
+        return sumFrom(hand.getHead());
+    }
+
+    private static int sumFrom(Node<Card> node) {
         if (node == null) return 0;
-        return cardPoints(node.getData()) + calcHandScore(node.getNext());
+        return pointsOf(node.getData()) + sumFrom(node.getNext());
     }
 
-    public int cardPoints(Card card) {
+    public int cardPoints(Card card) { return pointsOf(card); }
+
+    public static int pointsOf(Card card) {
         switch (card.getCardType()) {
             case NUMBER: return card.getValue();
             case SKIP:
             case REVERSE:
             case DRAW_TWO: return 20;
-            default: return 50;      // WILD, WILD_DRAW_FOUR
+            case SKIP_EVERYONE:
+            case DISCARD_ALL: return 30;
+            case WILD_DRAW_SIX: return 60;
+            case WILD_DRAW_TEN: return 80;
+            default: return 50;
         }
     }
 
-    /** Gives every loser 0 and the winner the sum of all losers' hands. Returns that sum. */
     public int recordRound(DynamicArray<Player> players, Player winner) {
-        int winnerScore = 0;
+        return recordRound(players, winner, 0);
+    }
+
+    public int recordRound(DynamicArray<Player> players, Player winner, int bonus) {
+        int winnerScore = bonus;
         for (int i = 0; i < players.getSize(); i++) {
             Player player = players.get(i);
             if (player != winner) winnerScore += calculateHandPoints(player.getHand());

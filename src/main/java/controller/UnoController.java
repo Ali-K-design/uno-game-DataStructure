@@ -2,6 +2,9 @@ package controller;
 
 import dataStructures.DynamicArray;
 import game.AccountManager;
+import game.ClassicRules;
+import game.NoMercyRules;
+import game.RuleSet;
 import game.Game;
 import game.Leaderboard;
 import game.ScoreManager;
@@ -55,7 +58,7 @@ public class UnoController implements AppActions {
     }
 
     @Override
-    public GameActions startGame(int humans, int bots, String mode, int limit, String[] otherHumans, GameView view) {
+    public GameActions startGame(int humans, int bots, String mode, int limit, String[] otherHumans, String variant, GameView view) {
         if (current == null) throw new IllegalArgumentException("Please log in first.");
         if (humans < 1) throw new IllegalArgumentException("There must be at least one human player.");
         if (bots < 0 || humans + bots < 2 || humans + bots > 10) {
@@ -66,6 +69,10 @@ public class UnoController implements AppActions {
         if ("score".equalsIgnoreCase(mode)) gameMode = Game.Mode.SCORE;
         else if ("rounds".equalsIgnoreCase(mode)) gameMode = Game.Mode.ROUNDS;
         else throw new IllegalArgumentException("Mode must be 'score' or 'rounds'.");
+        RuleSet rules;
+        if (variant == null || variant.isEmpty() || "classic".equalsIgnoreCase(variant)) rules = new ClassicRules();
+        else if ("nomercy".equalsIgnoreCase(variant)) rules = new NoMercyRules();
+        else throw new IllegalArgumentException("Variant must be 'classic' or 'nomercy'.");
         if (otherHumans == null || otherHumans.length != humans - 1) {
             throw new IllegalArgumentException("Provide the usernames of the other " + (humans - 1) + " human player(s).");
         }
@@ -85,7 +92,7 @@ public class UnoController implements AppActions {
             String name = "Bot_" + i;
             players.add(new BotPlayer(name, new Account(name, "", name)));
         }
-        Game game = new Game(players, new ScoreManager(leaderboard), gameMode, limit);
+        Game game = new Game(players, new ScoreManager(leaderboard), gameMode, limit, rules);
         return new GameSession(game, view, scheduler, botDelayMillis);
     }
 

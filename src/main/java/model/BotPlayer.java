@@ -2,7 +2,6 @@ package model;
 
 import dataStructures.Node;
 
-/** Deterministic bot following section 3.6 of the project spec. */
 public class BotPlayer extends Player {
     private static final Color[] COLOR_PRIORITY = {Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW};
 
@@ -15,38 +14,57 @@ public class BotPlayer extends Player {
 
     @Override
     public Action chooseAction(RoundState state) {
-        // Just drew a playable card: play it right away.
         Card drawn = state.getDrawnCard();
-        if (drawn != null) return Action.play(drawn, colorFor(drawn));
+        if (drawn != null) return play(drawn, state);
 
-        Card colored = null, wild = null, wildFour = null;
+        Card colored = null, weakSeven = null, wild = null, otherWild = null;
         int index = 0;
         for (Node<Card> n = getHand().getHead(); n != null; n = n.getNext(), index++) {
             if (!state.isPlayable(index)) continue;
             Card card = n.getData();
             if (state.getPendingPenalty() > 0) {
-                return Action.play(card, colorFor(card));      // first +2 / +4 found
+                return play(card, state);
             }
             if (card.getCardType() == CardType.WILD) {
                 if (wild == null) wild = card;
-            } else if (card.getCardType() == CardType.WILD_DRAW_FOUR) {
-                if (wildFour == null) wildFour = card;
+            } else if (card.getCardType().isWildFamily()) {
+                if (otherWild == null) otherWild = card;
+            } else if (isSwapSeven(card, state) && !swapHelps(state)) {
+                if (weakSeven == null) weakSeven = card;
             } else if (colored == null) {
                 colored = card;
             }
         }
-        if (colored != null) return Action.play(colored, Color.NONE);
-        if (wild != null) return Action.play(wild, bestColor());
-        if (wildFour != null) return Action.play(wildFour, bestColor());
+        if (colored != null) return play(colored, state);
+        if (wild != null) return play(wild, state);
+        if (otherWild != null) return play(otherWild, state);
+        if (weakSeven != null) return play(weakSeven, state);
         return Action.draw();
     }
 
-    private Color colorFor(Card card) {
-        boolean isWild = card.getCardType() == CardType.WILD || card.getCardType() == CardType.WILD_DRAW_FOUR;
-        return isWild ? bestColor() : Color.NONE;
+    private Action play(Card card, RoundState state) {
+        Color color = card.getCardType().isWildFamily() ? bestColor() : Color.NONE;
+        Player target = isSwapSeven(card, state) ? bestSwapTarget(state) : null;
+        return Action.play(card, color, target);
     }
 
-    /** Most frequent colour in hand; ties and empty hands follow RED, BLUE, GREEN, YELLOW. */
+    private boolean isSwapSeven(Card card, RoundState state) {
+        return state.isSevenSwaps() && card.getCardType() == CardType.NUMBER && card.getValue() == 7;
+    }
+
+    private Player bestSwapTarget(RoundState state) {
+        Player best = null;
+        for (Player p : state.getOpponents()) {
+            if (best == null || p.getHand().getSize() < best.getHand().getSize()) best = p;
+        }
+        return best;
+    }
+
+    private boolean swapHelps(RoundState state) {
+        Player target = bestSwapTarget(state);
+        return target != null && target.getHand().getSize() < getHand().getSize() - 1;
+    }
+
     private Color bestColor() {
         int[] counts = new int[COLOR_PRIORITY.length];
         for (Node<Card> n = getHand().getHead(); n != null; n = n.getNext()) {

@@ -4,7 +4,6 @@ import controller.Scheduler;
 import javafx.animation.PauseTransition;
 import javafx.util.Duration;
 
-/** Delays bot moves on the JavaFX thread (must be called from it, which button handlers are). */
 public final class FxScheduler implements Scheduler {
     @Override
     public void later(long delayMillis, Runnable task) {

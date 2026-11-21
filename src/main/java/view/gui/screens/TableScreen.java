@@ -23,7 +23,6 @@ import view.gui.Ui;
 
 import java.util.function.Consumer;
 
-/** The game table. Pure View: renders TableSnapshot, forwards clicks to GameActions. */
 public final class TableScreen extends StackPane implements GameView {
     private static final double HAND_W = 112, PILE_W = 104;
 
@@ -36,6 +35,8 @@ public final class TableScreen extends StackPane implements GameView {
     private final Label roundChip = Ui.label("", "chip", "chip-accent"), winChip = Ui.label("", "chip");
     private final Label dirLabel = Ui.label("CLOCKWISE", "chip");
     private final Label turnChip = Ui.label("", "chip");
+    private final Label variantChip = Ui.label("", "chip", "chip-danger");
+    private final Label cardsChip = Ui.label("", "chip");
     private final Label deckCount = Ui.label("", "pile-count");
     private final Label colorLabel = Ui.label("", "h2");
     private final Label penalty = Ui.label("", "penalty-badge");
@@ -59,7 +60,6 @@ public final class TableScreen extends StackPane implements GameView {
         this.onExit = onExit;
         getStyleClass().add("screen");
 
-        // --- hub (piles + active colour)
         ring.getStyleClass().add("felt-ring");
         ring.setMinSize(340, 340); ring.setPrefSize(340, 340); ring.setMaxSize(340, 340);
         for (int i = 0; i < 3; i++) {
@@ -81,7 +81,6 @@ public final class TableScreen extends StackPane implements GameView {
         hubCol.setAlignment(Pos.CENTER);
         arena = new Arena(new StackPane(ring, hubCol));
 
-        // --- top bar
         spinner.setType(ArcType.OPEN);
         spinner.getStyleClass().add("spinner");
         spin = new RotateTransition(Duration.seconds(3), spinner);
@@ -91,7 +90,7 @@ public final class TableScreen extends StackPane implements GameView {
         dir.setMinSize(36, 36);
         Region sp = new Region();
         HBox.setHgrow(sp, Priority.ALWAYS);
-        HBox top = new HBox(12, Ui.label("UNO", "h2"), roundChip, winChip, sp, dir, dirLabel,
+        HBox top = new HBox(12, Ui.label("UNO", "h2"), roundChip, winChip, variantChip, sp, dir, dirLabel,
                 Ui.button("Scores", null, this::showScores),
                 Ui.button("Log", null, () -> { boolean v = !logPanel.isVisible(); logPanel.setVisible(v); logPanel.setManaged(v); }),
                 Ui.button("Quit", "btn-danger", () -> { if (actions != null) actions.quit(); onExit.run(); }));
@@ -99,16 +98,17 @@ public final class TableScreen extends StackPane implements GameView {
         top.getStyleClass().add("topbar");
         top.setPadding(new Insets(12, 24, 12, 24));
 
-        // --- bottom
         drawBtn.setOnAction(e -> { if (actions != null) actions.draw(); });
         passBtn.setOnAction(e -> { if (actions != null) actions.pass(); });
         playDrawnBtn.setOnAction(e -> {
             if (last == null) return;
             Card drawn = last.hand()[last.hand().length - 1];
-            if (isWild(drawn)) pickColor(c -> actions.playDrawn(c)); else actions.playDrawn(null);
+            if (isWild(drawn)) pickColor(c -> actions.playDrawn(c));
+            else if (isTargetedSeven(drawn)) pickTarget(seat -> actions.play(last.hand().length - 1, null, seat));
+            else actions.playDrawn(null);
         });
         luckyBtn.setOnAction(e -> { if (actions != null) actions.drawMachine(); });
-        HBox actionBar = new HBox(14, turnChip, drawBtn, luckyBtn, playDrawnBtn, passBtn);
+        HBox actionBar = new HBox(14, turnChip, cardsChip, drawBtn, luckyBtn, playDrawnBtn, passBtn);
         actionBar.setAlignment(Pos.CENTER);
         TextField cheat = new TextField();
         cheat.setPromptText("cheat_give -t NUMBER -c RED -v 7   |   cheat_top   |   cheat_empty_deck   |   cheat_win_round");
@@ -120,7 +120,6 @@ public final class TableScreen extends StackPane implements GameView {
         VBox bottom = new VBox(8, debugBar, actionBar, hand);
         bottom.setPadding(new Insets(0, 0, 0, 0));
 
-        // --- log panel
         logPanel.getStyleClass().add("log-panel");
         logPanel.setPrefWidth(250); logPanel.setMinWidth(250);
         logPanel.getChildren().add(logBox);
@@ -135,7 +134,6 @@ public final class TableScreen extends StackPane implements GameView {
         overlay.setPickOnBounds(false);
         getChildren().addAll(layout, toast, overlay);
 
-        // F9 toggles the cheat bar (needed for the in-person evaluation)
         sceneProperty().addListener((o, oldS, newS) -> {
             if (newS != null) newS.addEventFilter(KeyEvent.KEY_PRESSED, ev -> {
                 if (ev.getCode() == KeyCode.F9) { boolean v = !debugBar.isVisible(); debugBar.setVisible(v); debugBar.setManaged(v); }
@@ -145,7 +143,6 @@ public final class TableScreen extends StackPane implements GameView {
 
     public void bind(GameActions actions) { this.actions = actions; }
 
-    // ------------------------------------------------------------------ GameView
     @Override
     public void render(TableSnapshot s) {
         last = s;
@@ -155,12 +152,10 @@ public final class TableScreen extends StackPane implements GameView {
         spin.setByAngle(s.clockwise() ? 360 : -360);
         spin.play();
 
-        // seats
         Node[] seatNodes = new Node[s.seats().length - 1];
-        for (int i = 1; i < s.seats().length; i++) seatNodes[i - 1] = new SeatNode(s.seats()[i], s.currentSeat() == i);
+        for (int i = 1; i < s.seats().length; i++) seatNodes[i - 1] = new SeatNode(s.seats()[i], s.currentSeat() == i, s.mercyLimit());
         arena.setSeats(seatNodes);
 
-        // piles + colour
         deckCount.setText(s.deckCount() + " left");
         CardNode topNode = CardNode.of(s.topCard(), PILE_W);
         CardNode g1 = CardNode.back(PILE_W), g2 = CardNode.back(PILE_W);
@@ -178,18 +173,24 @@ public final class TableScreen extends StackPane implements GameView {
         penalty.setText("+" + s.pendingPenalty() + " PENALTY");
         penalty.setVisible(pen); penalty.setManaged(pen);
 
-        // actions
         boolean mine = s.myTurn();
         turnChip.getStyleClass().removeAll("chip-turn");
         if (mine) turnChip.getStyleClass().add("chip-turn");
-        turnChip.setText(mine ? "YOUR TURN" : "Waiting for " + s.seats()[s.currentSeat()].name() + "\u2026");
+        turnChip.setText(s.seats()[0].eliminated() ? "YOU ARE ELIMINATED - watching"
+                : mine ? "YOUR TURN" : "Waiting for " + s.seats()[s.currentSeat()].name() + "\u2026");
+        boolean nm = s.mercyLimit() > 0;
+        variantChip.setVisible(nm); variantChip.setManaged(nm);
+        variantChip.setText("NO MERCY \u00B7 out at " + s.mercyLimit());
+        cardsChip.setVisible(nm); cardsChip.setManaged(nm);
+        cardsChip.setText("Your cards: " + s.hand().length + "/" + s.mercyLimit());
+        cardsChip.getStyleClass().removeAll("chip-danger");
+        if (nm && s.hand().length >= s.mercyLimit() - 5) cardsChip.getStyleClass().add("chip-danger");
         drawBtn.setText(pen ? "Take +" + s.pendingPenalty() : "Draw");
         drawBtn.setDisable(!mine || s.drawnCardPending());
         luckyBtn.setVisible(mine && pen); luckyBtn.setManaged(mine && pen);
         playDrawnBtn.setVisible(mine && s.drawnCardPending()); playDrawnBtn.setManaged(mine && s.drawnCardPending());
         passBtn.setVisible(mine && s.drawnCardPending());      passBtn.setManaged(mine && s.drawnCardPending());
 
-        // hand
         CardNode[] nodes = new CardNode[s.hand().length];
         for (int i = 0; i < nodes.length; i++) {
             final int idx = i;
@@ -202,7 +203,6 @@ public final class TableScreen extends StackPane implements GameView {
         }
         hand.setCards(nodes);
 
-        // log (newest first)
         logBox.getChildren().clear();
         for (int i = s.log().length - 1, k = 0; i >= 0 && k < 14; i--, k++)
             logBox.getChildren().add(Ui.label(s.log()[i], k == 0 ? "log-line-new" : "log-line"));
@@ -220,16 +220,40 @@ public final class TableScreen extends StackPane implements GameView {
         new SequentialTransition(in, hold, out).play();
     }
 
-    // ------------------------------------------------------------------ interaction
     private void onCardClicked(int index, CardNode node, boolean playable) {
         if (actions == null) return;
         if (!playable) { node.shake(); return; }
-        if (isWild(node.getCard())) pickColor(color -> actions.play(index, color));
+        Card card = node.getCard();
+        if (isWild(card)) pickColor(color -> actions.play(index, color));
+        else if (isTargetedSeven(card)) pickTarget(seat -> actions.play(index, null, seat));
         else actions.play(index, null);
     }
 
     private static boolean isWild(Card c) {
-        return c.getCardType() == CardType.WILD || c.getCardType() == CardType.WILD_DRAW_FOUR;
+        return c.getCardType().isWildFamily();
+    }
+
+    private boolean isTargetedSeven(Card c) {
+        return last != null && last.sevensNeedTarget() && c.getCardType() == CardType.NUMBER && c.getValue() == 7;
+    }
+
+    private void pickTarget(Consumer<Integer> onPicked) {
+        VBox list = new VBox(12);
+        list.setAlignment(Pos.CENTER);
+        for (int i = 1; i < last.seats().length; i++) {
+            TableSnapshot.Seat seat = last.seats()[i];
+            if (seat.eliminated()) continue;
+            final int seatIndex = i;
+            Button b = new Button(seat.name() + "   \u00B7   " + seat.cards() + " cards");
+            b.getStyleClass().add("target-pick");
+            b.setMaxWidth(Double.MAX_VALUE);
+            b.setOnAction(e -> { overlay.getChildren().clear(); onPicked.accept(seatIndex); });
+            list.getChildren().add(b);
+        }
+        VBox panel = new VBox(22, Ui.label("Swap hands with\u2026", "h1"), list,
+                Ui.button("Cancel", null, () -> overlay.getChildren().clear()));
+        panel.setAlignment(Pos.CENTER);
+        showOverlay(panel, true);
     }
 
     private void pickColor(Consumer<Color> onPicked) {
