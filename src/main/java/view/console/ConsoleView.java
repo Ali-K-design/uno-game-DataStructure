@@ -15,18 +15,21 @@ public class ConsoleView implements GameView {
     private boolean summaryPending;
     private boolean gameOver;
     private TableSnapshot last;
+    private boolean online;
 
     public ConsoleView(PrintStream out) { this.out = out; }
 
-    public boolean takeSummaryPending() {
+    public synchronized boolean takeSummaryPending() {
         boolean was = summaryPending;
         summaryPending = false;
         return was;
     }
 
-    public boolean isGameOver() { return gameOver; }
+    public synchronized boolean isGameOver() { return gameOver; }
 
-    public int seatAt(int displayIndex) {
+    public synchronized void setOnline(boolean online) { this.online = online; }
+
+    public synchronized int seatAt(int displayIndex) {
         if (last == null) return -1;
         int n = last.seats().length;
         if (displayIndex < 0 || displayIndex >= n) return -1;
@@ -34,9 +37,9 @@ public class ConsoleView implements GameView {
     }
 
     @Override
-    public void render(TableSnapshot s) {
+    public synchronized void render(TableSnapshot s) {
         last = s;
-        if (s.log().length < printedLogLines) printedLogLines = 0;     // a new round started
+        if (s.log().length < printedLogLines) printedLogLines = 0;
         for (int i = printedLogLines; i < s.log().length; i++) out.println("  * " + s.log()[i]);
         printedLogLines = s.log().length;
 
@@ -51,7 +54,12 @@ public class ConsoleView implements GameView {
     }
 
     @Override
-    public void toast(String message) { out.println("  >> " + message); }
+    public synchronized void toast(String message) { out.println("  >> " + message); }
+
+    @Override
+    public synchronized void lobby(String roomId, String[] names, int needed) {
+        out.println("  >> Room " + roomId + ": waiting for players (" + names.length + "/" + needed + "): " + String.join(", ", names));
+    }
 
     private void printBoard(TableSnapshot s) {
         out.println(BAR);
@@ -92,6 +100,7 @@ public class ConsoleView implements GameView {
         }
         out.println("Points added to " + r.winner() + ": " + r.gained());
         if (r.gameOver()) out.println("GAME OVER - Champion: " + r.champion());
+        if (online) out.println(r.gameOver() ? "Type quit_game to go back to the menu." : "Type next for the next round (or quit_game to leave).");
         out.println(BAR);
     }
 }

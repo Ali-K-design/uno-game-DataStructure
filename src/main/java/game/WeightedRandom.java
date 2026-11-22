@@ -2,11 +2,9 @@ package game;
 
 import java.util.Random;
 
-/** Weighted Random Selection with a hand-built prefix-sum array (no collections). */
 public final class WeightedRandom {
     private WeightedRandom() { }
 
-    /** Builds cumulative sums; rejects null/empty input, negative weights and an all-zero total. */
     public static int[] buildPrefixSums(int[] weights) {
         if (weights == null || weights.length == 0) {
             throw new IllegalArgumentException("Weights must not be empty.");
@@ -26,7 +24,6 @@ public final class WeightedRandom {
         return prefix;
     }
 
-    /** First index whose prefix sum is strictly greater than r (so zero-weight options can never win). */
     public static int indexFor(int[] prefix, int r) {
         for (int i = 0; i < prefix.length; i++) {
             if (r < prefix[i]) return i;

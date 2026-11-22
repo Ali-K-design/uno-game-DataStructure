@@ -7,6 +7,7 @@ import game.Round;
 import model.Action;
 import model.Card;
 import model.CardType;
+import model.HumanPlayer;
 import model.Color;
 import model.Player;
 import view.GameView;
@@ -23,14 +24,35 @@ public class GameSession implements GameActions {
     private int epoch;
 
     public GameSession(Game game, GameView view, Scheduler scheduler, long botDelayMillis) {
+        this(game, view, scheduler, botDelayMillis, true);
+    }
+
+    public GameSession(Game game, GameView view, Scheduler scheduler, long botDelayMillis, boolean startNow) {
         this.game = game;
         this.view = view;
         this.scheduler = scheduler;
         this.botDelayMillis = botDelayMillis;
         this.viewer = game.getPlayers().get(0);
+        if (startNow) begin();
+    }
+
+    public void begin() {
         game.startRound();
         say("Round " + game.getRoundNumber() + " started. Top card: " + CardText.of(round().getTopCard()));
         publish();
+    }
+
+    public Player getPlayer(int index) { return game.getPlayers().get(index); }
+
+    public Player getCurrentPlayer() { return round().getCurrentPlayer(); }
+
+    public void autopilot(Player player) {
+        if (player instanceof HumanPlayer human) human.setAutopilot(true);
+        if (closed) return;
+        say(player.getName() + " disconnected - a bot takes over.");
+        if (summary == null && !round().isFinished()) {
+            publish(player.getName() + " disconnected - a bot takes over.");   // renders for everyone; bot moves if it is its turn
+        }
     }
 
     private Round round() { return game.getCurrentRound(); }
@@ -272,7 +294,6 @@ public class GameSession implements GameActions {
     }
 
     private void publish() { publish(null); }
-
     private void publish(String announcement) {
         String lastEvent = flushEvents();
         if (announcement == null) announcement = lastEvent;
@@ -325,7 +346,9 @@ public class GameSession implements GameActions {
         publish();
     }
 
-    private TableSnapshot snapshot() {
+    private TableSnapshot snapshot() { return snapshotFor(viewer); }
+
+    public TableSnapshot snapshotFor(Player viewer) {
         Round r = round();
         DynamicArray<Player> players = game.getPlayers();
         int n = players.getSize();
@@ -367,6 +390,7 @@ public class GameSession implements GameActions {
     }
 
     private void say(String line) { log.add(line); }
+
     private String flushEvents() {
         String[] events = round().popEvents();
         for (int i = 0; i < events.length; i++) say(events[i]);
@@ -380,6 +404,7 @@ public class GameSession implements GameActions {
                     int n = Integer.parseInt(tokens[i + 1]);
                     if (n >= 1 && n <= 60) return n;
                 } catch (NumberFormatException e) {
+                    // fall through
                 }
                 throw new IllegalArgumentException("-n must be a number between 1 and 60.");
             }

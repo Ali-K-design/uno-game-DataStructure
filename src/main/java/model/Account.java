@@ -1,6 +1,5 @@
 package model;
 
-/** Persistent user account: identity plus lifetime statistics (used by the Leaderboard). */
 public class Account {
     private String username;
     private String password;
@@ -15,7 +14,6 @@ public class Account {
         this.displayName = displayName;
     }
 
-    /** Called once when a game ends: adds that game's score, counts the game and (maybe) a win. */
     public void addGameResult(int gameScore, boolean won) {
         totalScore += gameScore;
         gamesPlayed++;

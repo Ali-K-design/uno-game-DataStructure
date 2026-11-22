@@ -2,7 +2,6 @@ package game;
 
 import model.Account;
 
-/** Registration and authentication rules (spec 3.7). */
 public class AccountManager {
     private final Leaderboard leaderboard;
 
@@ -10,7 +9,6 @@ public class AccountManager {
         this.leaderboard = leaderboard;
     }
 
-    /** Returns null on success, otherwise the reason registration failed. */
     public String register(String username, String password, String displayName) {
         if (username == null || username.isEmpty() || username.chars().anyMatch(Character::isWhitespace)) {
             return "Username must not be empty or contain spaces.";
@@ -22,7 +20,6 @@ public class AccountManager {
         return null;
     }
 
-    /** Null when the credentials are wrong. */
     public Account authenticate(String username, String password) {
         Account account = leaderboard.findByUsername(username);
         if (account == null || !account.getPassword().equals(password)) return null;

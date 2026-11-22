@@ -239,7 +239,6 @@ public class Round {
         }
     }
 
-    // ------------------------------------------------------------------ primitives used by RuleSets
     void advance(int steps) { turnManager.advanceTurn(steps); }
     void reverse() { turnManager.handleReverseCard(); }
     void skipNext() { turnManager.skipTurn(); }

@@ -2,11 +2,6 @@ package game;
 
 import java.util.Random;
 
-/**
- * The "lucky draw" a player may use instead of taking a pending penalty (spec 3.8).
- * Outcome = how many cards are drawn; it REPLACES the whole pending penalty.
- * The table used depends on the card that created the top of the penalty chain.
- */
 public class DrawMachine {
     private static final int[] PLUS_TWO_CARDS = {0, 1, 2, 4};
     private static final int[] PLUS_TWO_WEIGHTS = {1, 2, 2, 1};

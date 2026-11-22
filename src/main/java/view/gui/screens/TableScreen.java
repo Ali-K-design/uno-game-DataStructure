@@ -29,6 +29,7 @@ public final class TableScreen extends StackPane implements GameView {
     private GameActions actions;
     private TableSnapshot last;
     private boolean summaryShown;
+    private boolean waitingShown;
     private Card lastTop;
 
     private final Runnable onExit;
@@ -145,6 +146,7 @@ public final class TableScreen extends StackPane implements GameView {
 
     @Override
     public void render(TableSnapshot s) {
+        if (waitingShown) { overlay.getChildren().clear(); waitingShown = false; }
         last = s;
         roundChip.setText(s.roundTitle());
         winChip.setText(s.winCondition());
@@ -209,6 +211,20 @@ public final class TableScreen extends StackPane implements GameView {
 
         if (s.summary() != null && !summaryShown) { summaryShown = true; showSummary(s.summary()); }
         if (s.summary() == null) summaryShown = false;
+    }
+
+    @Override
+    public void lobby(String roomId, String[] names, int needed) {
+        if (last != null) return;
+        VBox list = new VBox(8);
+        list.setAlignment(Pos.CENTER);
+        for (String n : names) list.getChildren().add(Ui.label(n, "h2"));
+        VBox panel = new VBox(20, Ui.label("Room " + roomId, "h1"),
+                Ui.label("Waiting for players...  " + names.length + " / " + needed, "muted"), list,
+                Ui.button("Leave room", "btn-danger", () -> { if (actions != null) actions.quit(); onExit.run(); }));
+        panel.setAlignment(Pos.CENTER);
+        showOverlay(panel, false);
+        waitingShown = true;
     }
 
     @Override

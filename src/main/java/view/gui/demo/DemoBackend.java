@@ -8,7 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public final class DemoBackend implements AppActions {
-    private final Map<String, String[]> users = new LinkedHashMap<>();   // username -> {password, displayName}
+    private final Map<String, String[]> users = new LinkedHashMap<>();
     private String current;
 
     public DemoBackend() {

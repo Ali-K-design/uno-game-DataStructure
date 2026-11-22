@@ -29,10 +29,6 @@ public class CustomQueue<T> {
         return data;
     }
 
-    /**
-     * Appends a whole linked list to the rear in O(1): rear.next = list.head; rear = list.tail.
-     * The list is emptied afterwards because its nodes now belong to this queue.
-     */
     public void appendList(SinglyLinkedList<T> list) {
         if (list.isEmpty()) return;
         if (front == null) {

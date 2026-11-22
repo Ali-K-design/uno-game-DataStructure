@@ -22,6 +22,7 @@ public class ConsoleApp {
         this.in = in;
         this.out = out;
         this.view = new ConsoleView(out);
+        this.view.setOnline(app.isOnline());
     }
 
     public ConsoleView getView() { return view; }
@@ -51,7 +52,7 @@ public class ConsoleApp {
             }
             case "login": {
                 String err = app.login(flag(t, "-u"), flag(t, "-p"));
-                if (err == null) { loggedIn = true; out.println("Welcome, " + app.currentDisplayName() + "!  Commands: leaderboard | start_game -p H -b B -mode score|rounds -limit N [-variant nomercy] | logout"); }
+                if (err == null) { loggedIn = true; out.println("Welcome, " + app.currentDisplayName() + "!  Commands: leaderboard | rooms | host ... | join <id> | start_game -p H -b B -mode score|rounds -limit N [-variant nomercy] | logout"); }
                 else out.println("Error: " + err);
                 break;
             }
@@ -65,6 +66,9 @@ public class ConsoleApp {
         switch (t[0].toLowerCase()) {
             case "leaderboard": printLeaderboard(); break;
             case "start_game": startGame(t); break;
+            case "rooms": if (app.isOnline()) printRooms(); else out.println("Not connected to a server."); break;
+            case "host": if (app.isOnline()) hostRoom(t); else out.println("Not connected to a server."); break;
+            case "join": if (app.isOnline()) joinRoom(t); else out.println("Not connected to a server."); break;
             case "logout": case "exit": app.logout(); loggedIn = false; break;
             default: out.println("Unknown command. Available here: leaderboard, start_game, logout.");
         }
@@ -74,6 +78,44 @@ public class ConsoleApp {
         out.printf("%-5s %-16s %-14s %7s %6s %5s%n", "Rank", "Name", "Username", "Score", "Games", "Wins");
         for (AppActions.LeaderboardRow r : app.leaderboard()) {
             out.printf("%-5d %-16s %-14s %7d %6d %5d%n", r.rank(), r.displayName(), r.username(), r.totalScore(), r.games(), r.wins());
+        }
+    }
+
+    private void printRooms() {
+        AppActions.RoomInfo[] rooms;
+        try {
+            rooms = app.listRooms();
+        } catch (IllegalArgumentException e) {
+            out.println("Error: " + e.getMessage());
+            return;
+        }
+        if (rooms.length == 0) out.println("No open rooms. Create one with: host -p <humans> -b <bots> -mode score|rounds -limit N");
+        for (AppActions.RoomInfo r : rooms) {
+            out.printf("Room %d | host %s | humans %d/%d | bots %d | %s %d | %s%n", r.id(), r.host(), r.joined(), r.humans(),
+                    r.bots(), r.mode(), r.limit(), r.variant());
+        }
+    }
+
+    private void hostRoom(String[] t) {
+        try {
+            String variant = flag(t, "-variant");
+            game = app.hostRoom(Integer.parseInt(flag(t, "-p")), Integer.parseInt(flag(t, "-b")), String.valueOf(flag(t, "-mode")),
+                    Integer.parseInt(flag(t, "-limit")), variant == null ? "classic" : variant, view);
+            out.println("Room created. Waiting for the other players...");
+        } catch (NumberFormatException e) {
+            out.println("Usage: host -p <humans incl. you> -b <bots> -mode <score|rounds> -limit <N> [-variant classic|nomercy]");
+        } catch (IllegalArgumentException e) {
+            out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void joinRoom(String[] t) {
+        try {
+            game = app.joinRoom(Integer.parseInt(t[1]), view);
+        } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+            out.println("Usage: join <room_id>   (see: rooms)");
+        } catch (IllegalArgumentException e) {
+            out.println("Error: " + e.getMessage());
         }
     }
 
@@ -125,11 +167,12 @@ public class ConsoleApp {
             case "play_drawn": game.playDrawn(colorOrNull(flag(t, "-c"))); break;
             case "pass": game.pass(); break;
             case "scores": out.print(game.scoreboardText()); break;
+            case "next": game.nextRound(); break;
             case "quit_game": game.quit(); game = null; return;
             case "cheat_give": case "cheat_top": case "cheat_empty_deck": case "cheat_win_round": game.cheat(line); break;
-            default: out.println("Unknown command. Use: play, draw, draw_machine, play_drawn, pass, scores, quit_game.");
+            default: out.println("Unknown command. Use: play, draw, draw_machine, play_drawn, pass, scores, next, quit_game.");
         }
-        afterGameCommand();
+        if (!app.isOnline()) afterGameCommand();
     }
 
     private void afterGameCommand() throws IOException {
@@ -148,6 +191,7 @@ public class ConsoleApp {
         for (int i = 1; i < t.length - 1; i++) if (t[i].equalsIgnoreCase(name)) return t[i + 1];
         return null;
     }
+
 
     private static String rest(String[] t, String name) {
         for (int i = 1; i < t.length - 1; i++) {

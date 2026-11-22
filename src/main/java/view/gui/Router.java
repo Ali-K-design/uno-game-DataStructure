@@ -11,7 +11,7 @@ import view.gui.screens.*;
 
 public final class Router {
     private final StackPane host = new StackPane();
-    private final AppActions app;
+    private AppActions app;
 
     public Router(Stage stage, AppActions app) {
         this.app = app;
@@ -30,6 +30,10 @@ public final class Router {
         ft.setToValue(1);
         ft.play();
     }
+
+    public void setApp(AppActions app) { this.app = app; }
+
+    public void showConnect(String message) { show(new ConnectScreen(this, message)); }
 
     public void showAuth() { show(new AuthScreen(app, this::showMenu)); }
     public void showMenu() { show(new MenuScreen(app, this)); }
